@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulation HOS — Loi 430 | DEP 5291</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-dk:  #0a6570;
+    --teal:     #0e8a96;
+    --teal-md:  #12a0ae;
+    --teal-lt:  #d0f0f3;
+    --teal-bg:  #e8f7f8;
+    --red:      #c8251d;
+    --red-dk:   #9e1c16;
+    --red-lt:   #fde8e7;
+    --grey-dk:  #4b5563;
+    --grey-hd:  #6b7280;   /* gris pour titres de section */
+    --grey-md:  #6b7280;
+    --grey-lt:  #d1d5db;
+    --grey-bg:  #f3f4f6;
+    --white:    #ffffff;
+    --ok:       #0a6b32;
+    --ok-lt:    #d1fae5;
+    --warn:     #92400e;
+    --warn-lt:  #fef3c7;
+    --text:     #1f2937;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: #c8d4d6;
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .app {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 0 0 48px;
+    background: var(--white);
+    box-shadow: 0 2px 40px rgba(0,0,0,0.22);
+  }
+
+  /* ── HEADER ── */
+  .app-header {
+    background: #1a2b3c;
+    padding: 11px 18px 9px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    border-bottom: 3px solid var(--red);
+  }
+  .app-header-left { display: flex; align-items: center; gap: 12px; }
+  .header-titles h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; font-weight: 700; letter-spacing: 1px;
+    color: var(--white); text-transform: uppercase;
+  }
+  .header-titles p {
+    font-size: 11px; color: var(--teal-lt); letter-spacing: 0.3px; margin-top: 1px;
+  }
+  .header-ref {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.08);
+    padding: 6px 14px; border-radius: 3px;
+  }
+
+  /* ── TITLE BAR ── */
+  .title-bar {
+    background: #374151;
+    text-align: center;
+    padding: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 2.5px;
+    color: var(--white); text-transform: uppercase;
+    border-bottom: 1px solid #555;
+  }
+
+  /* ── CONTROLS BAR ── */
+  .controls-bar {
+    background: var(--teal-bg);
+    border-bottom: 2px solid var(--teal);
+    padding: 8px 16px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+
+  /* Tous les boutons sont rouges */
+  .btn-generate {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 1px;
+    padding: 6px 16px;
+    background: var(--red);
+    border: 1px solid var(--red-dk);
+    border-radius: 3px;
+    color: var(--white); cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .btn-generate:hover { background: var(--red-dk); }
+  .btn-generate svg { width: 13px; height: 13px; }
+
+  .ctrl-sep { width: 1px; height: 26px; background: var(--grey-lt); margin: 0 2px; }
+
+  .cycle-tabs { display: flex; gap: 3px; }
+  .cycle-tab {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 6px 18px;
+    background: var(--white);
+    border: 1px solid var(--grey-lt);
+    border-radius: 3px;
+    color: var(--teal-dk);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .cycle-tab:hover { border-color: var(--teal); background: var(--teal-lt); }
+  .cycle-tab.active {
+    background: var(--red);
+    border-color: var(--red-dk);
+    color: var(--white);
+  }
+
+  .btn-results {
+    margin-left: auto;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 1px;
+    padding: 6px 18px;
+    background: var(--red);
+    border: 1px solid var(--red-dk);
+    border-radius: 3px;
+    color: var(--white); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-results:hover { background: var(--red-dk); }
+
+  /* ── TITRES DE SECTION — tous gris ── */
+  .ph-grid, .ph-eleve, .ph-analyse {
+    background: var(--grey-hd);
+    padding: 7px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ph-eleve, .ph-analyse {
+    cursor: pointer; user-select: none;
+  }
+  .ph-grid h2, .ph-eleve h2, .ph-analyse h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--white); text-transform: uppercase;
+  }
+  .toggle-icon {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.15);
+    padding: 2px 8px; border-radius: 2px;
+  }
+  .panel-body { padding: 14px 16px; background: var(--grey-bg); }
+  .panel-body.hidden { display: none; }
+
+  /* ── GRILLE — teal conservé ── */
+  .day-grid { display: grid; grid-template-columns: repeat(8, 1fr); }
+
+  .day-head {
+    background: var(--teal);
+    text-align: center;
+    padding: 7px 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--white);
+    border-right: 1px solid var(--teal-dk);
+    border-bottom: 1px solid var(--teal-dk);
+  }
+  .day-head:last-child { border-right: none; }
+
+  .day-val {
+    text-align: center;
+    padding: 10px 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--text);
+    border-right: 1px solid var(--grey-lt);
+    border-bottom: 1px solid var(--grey-lt);
+    background: var(--white);
+  }
+  .day-val:last-child { border-right: none; }
+
+  /* 0 = repos 24h */
+  .day-val.zero {
+    color: var(--teal-dk);
+    font-size: 18px; font-weight: 800;
+    background: var(--teal-lt);
+  }
+  /* Case élève jour 16 */
+  .day-val.empty {
+    background: #e5e7eb;
+    color: var(--grey-md);
+    font-size: 20px;
+  }
+
+  .day-row-sep {
+    height: 6px;
+    background: #374151;
+    border-top: 1px solid #555;
+    border-bottom: 1px solid #555;
+  }
+
+  /* ── LÉGENDE 14 JOURS CONSÉCUTIFS ── */
+  .consec-legend {
+    background: var(--warn-lt);
+    border-top: 2px solid #d97706;
+    border-bottom: 1px solid #fcd34d;
+    padding: 7px 14px;
+    font-size: 12px; color: var(--warn);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; letter-spacing: 0.3px;
+    line-height: 1.5;
+  }
+  .consec-legend.hidden { display: none; }
+    background: var(--red-lt);
+    border-top-color: var(--red);
+    border-bottom-color: #fca5a5;
+    color: var(--red-dk);
+  }
+
+  /* Case à cocher mode infraction */
+  .infraction-toggle {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--grey-dk);
+    background: var(--white);
+    border: 1.5px solid var(--grey-lt);
+    border-radius: 3px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .infraction-toggle:hover { border-color: var(--red); color: var(--red-dk); }
+  .infraction-toggle.active {
+    background: var(--red-lt);
+    border-color: var(--red);
+    color: var(--red-dk);
+  }
+  .infraction-toggle input[type="checkbox"] {
+    width: 14px; height: 14px;
+    accent-color: var(--red);
+    cursor: pointer;
+  }
+  .eleve-note {
+    font-size: 12px; color: #374151;
+    background: var(--teal-bg);
+    border: 1px solid #a7d8dc;
+    border-radius: 3px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .q-block {
+    background: var(--white);
+    border: 1px solid var(--grey-lt);
+    border-left: 3px solid var(--teal);
+    border-radius: 3px;
+    padding: 9px 12px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .q-block:last-child { margin-bottom: 0; }
+  .q-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700; color: var(--teal-dk); min-width: 22px;
+  }
+  .q-text { font-size: 13px; color: var(--text); flex: 1; min-width: 180px; }
+  .q-input {
+    width: 70px; padding: 5px 6px;
+    background: var(--white);
+    border: 1.5px solid var(--grey-lt);
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px; font-weight: 700; color: var(--text);
+    text-align: center; outline: none; transition: border-color 0.15s;
+  }
+  .q-input:focus { border-color: var(--teal); }
+  .q-select {
+    padding: 5px 8px;
+    background: var(--white);
+    border: 1.5px solid var(--grey-lt);
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; font-weight: 600; color: var(--text);
+    outline: none; cursor: pointer;
+  }
+  /* Bouton vérifier = rouge */
+  .btn-verif {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.8px;
+    padding: 5px 12px;
+    background: var(--red);
+    border: none; border-radius: 3px;
+    color: var(--white); cursor: pointer; transition: background 0.15s;
+  }
+  .btn-verif:hover { background: var(--red-dk); }
+  .q-fb {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; font-weight: 700;
+    padding: 3px 10px; border-radius: 3px;
+  }
+  .q-fb.ok   { background: var(--ok-lt);  color: var(--ok);  border: 1px solid #6ee7b7; }
+  .q-fb.err  { background: var(--red-lt); color: var(--red-dk); border: 1px solid #fca5a5; }
+  .q-fb.hint { background: var(--teal-lt); color: var(--teal-dk); border: 1px solid #a7d8dc; }
+  .q-fb.hidden { display: none; }
+
+  /* ── ANALYSE ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    gap: 10px; margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--grey-lt);
+    border-top: 3px solid var(--teal);
+    border-radius: 3px; padding: 10px 12px;
+  }
+  .stat-card.s-danger { border-top-color: var(--red); }
+  .stat-lbl {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--grey-md); text-transform: uppercase; margin-bottom: 2px;
+  }
+  .stat-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px; font-weight: 700; color: var(--text); line-height: 1;
+  }
+  .stat-val.danger { color: var(--red); }
+  .stat-sub { font-size: 11px; color: var(--grey-md); margin-top: 1px; }
+  .gauge-track { height: 4px; background: var(--grey-lt); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .gauge-fill  { height: 100%; border-radius: 2px; background: var(--teal); transition: width 0.5s; }
+  .gauge-fill.danger { background: var(--red); }
+  .gauge-fill.warn   { background: #d97706; }
+
+  .conform-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px; background: var(--white);
+    border: 1px solid var(--grey-lt); border-radius: 3px;
+    margin-bottom: 8px; gap: 10px;
+  }
+  .conform-row:last-child { margin-bottom: 0; }
+  .conform-row.ok-row   { border-left: 3px solid var(--ok); }
+  .conform-row.err-row  { border-left: 3px solid var(--red); }
+  .conform-row.info-row { border-left: 3px solid var(--teal); }
+  .conform-text { font-size: 13px; color: var(--text); }
+  .conform-text strong { font-weight: 600; }
+  .pill {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+    padding: 3px 10px; border-radius: 3px; white-space: nowrap;
+  }
+  .pill-ok   { background: var(--ok-lt);  color: var(--ok);  border: 1px solid #6ee7b7; }
+  .pill-err  { background: var(--red-lt); color: var(--red-dk); border: 1px solid #fca5a5; }
+  .pill-info { background: var(--teal-lt); color: var(--teal-dk); border: 1px solid #a7d8dc; }
+
+  /* ── FOOTER ── */
+  .app-footer {
+    background: #374151;
+    padding: 8px 16px; text-align: center;
+    font-size: 11px; letter-spacing: 0.5px; color: #ffffff;
+    border-top: 2px solid var(--teal);
+  }
+
+  @keyframes popIn {
+    from { opacity: 0.4; transform: scale(0.88); }
+    to   { opacity: 1;   transform: scale(1); }
+  }
+  .pop { animation: popIn 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+  @media (max-width: 600px) {
+    .day-head { font-size: 10px; padding: 5px 1px; }
+    .day-val  { font-size: 13px; padding: 7px 2px; }
+    .day-val.zero { font-size: 13px; }
+    .q-text { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="app-header">
+    <div class="app-header-left">
+      <div class="header-titles">
+        <h1>Simulation — Fiche récapitulative HCR</h1>
+        <p>DEP 5291 · Transport routier de marchandises · Québec</p>
+      </div>
+    </div>
+    <div class="header-ref">Règlement sur les heures de conduite et de repos</div>
+  </div>
+
+  <!-- TITLE BAR -->
+  <div class="title-bar">Récapitulatif du Cycle 1 et Cycle 2</div>
+
+  <!-- CONTROLS -->
+  <div class="controls-bar">
+    <button class="btn-generate" onclick="generate()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5"/>
+        <polyline points="13.5,2.5 13.5,5.5 10.5,5.5"/>
+      </svg>
+      GÉNÉRER
+    </button>
+    <div class="ctrl-sep"></div>
+    <div class="cycle-tabs">
+      <button class="cycle-tab" id="tab1" onclick="setCycle(1)">Cycle 1</button>
+      <button class="cycle-tab active" id="tab2" onclick="setCycle(2)">Cycle 2</button>
+    </div>
+    <div class="ctrl-sep"></div>
+    <label class="infraction-toggle" id="infractionLabel" onclick="toggleInfraction()">
+      <input type="checkbox" id="infractionChk" onclick="event.stopPropagation(); toggleInfraction()">
+      ⚠ Mode infraction
+    </label>
+    <button class="btn-results" onclick="toggleAnalyse()">RÉSULTATS ▶</button>
+  </div>
+
+  <!-- GRILLE -->
+  <div>
+    <div class="ph-grid"><h2 id="gridLabel">Grille — Cycle 2 · 120h / 14 jours</h2></div>
+    <div class="day-grid" id="head1"></div>
+    <div class="day-grid" id="vals1"></div>
+    <div class="day-row-sep"></div>
+    <div class="day-grid" id="head2"></div>
+    <div class="day-grid" id="vals2"></div>
+    <div class="consec-legend hidden" id="consecLegend"></div>
+  </div>
+
+  <!-- ZONE ÉLÈVE -->
+  <div>
+    <div class="ph-eleve" onclick="togglePanel('eleveBody','eleveIcon')">
+      <h2>Zone élève — Exercice</h2>
+      <span class="toggle-icon" id="eleveIcon">▲ MASQUER</span>
+    </div>
+    <div class="panel-body" id="eleveBody"></div>
+  </div>
+
+  <!-- ANALYSE (masquée par défaut) -->
+  <div>
+    <div class="ph-analyse" onclick="togglePanel('analyseBody','analyseIcon')">
+      <h2>Analyse de conformité — Loi 430</h2>
+      <span class="toggle-icon" id="analyseIcon">▼ AFFICHER</span>
+    </div>
+    <div class="panel-body hidden" id="analyseBody"></div>
+  </div>
+
+  <div class="app-footer">Simulation pédagogique · Loi sur les heures de service (Loi 430) · DEP 5291 &nbsp;|&nbsp; Propriété de Guillaume Nicole-Roussel</div>
+</div>
+
+<script>
+let hours = new Array(15).fill(0);
+let cycle = 2;
+let modeInfraction = false;
+
+function toggleInfraction() {
+  modeInfraction = !modeInfraction;
+  document.getElementById('infractionChk').checked = modeInfraction;
+  document.getElementById('infractionLabel').className =
+    'infraction-toggle' + (modeInfraction ? ' active' : '');
+}
+
+function setCycle(c) {
+  cycle = c;
+  document.getElementById('tab1').className = 'cycle-tab' + (c===1?' active':'');
+  document.getElementById('tab2').className = 'cycle-tab' + (c===2?' active':'');
+  hours = new Array(15).fill(0);
+  render();
+}
+
+function randH(allowZero) {
+  if (allowZero && Math.random() < 0.18) return 0;
+  return Math.floor(Math.random() * 11) + 4; // 4 à 14h
+}
+
+function generate() {
+  hours = new Array(15).fill(0);
+  modeInfraction ? generateInfraction() : generateConforme();
+  render();
+  resetFeedbacks();
+}
+
+/* ── Génération CONFORME ──
+   Cycle 1 : 15 jours, case élève = jour 15 (index 14)
+             Jours passés = indices 0-7 (jours 1-8)
+             Jours actifs = indices 8-13 (jours 9-14), avec possibilité de 0
+             Au moins un 0 garanti dans les 14 jours précédant le jour 15
+   Cycle 2 : 15 jours, case élève = jour 15 (index 14)
+             Jours passés = indices 0-1 (jours 1-2)
+             Jours actifs = indices 2-13 (jours 3-14), repos garanti avant 70h     */
+function generateConforme() {
+  if (cycle === 1) {
+    // Jours passés 1-8 (indices 0-7) : heures avec possibilité de 0
+    let passeHasRepos = false;
+    for (let i = 0; i < 8; i++) {
+      hours[i] = randH(i > 0 && !passeHasRepos);
+      if (hours[i] === 0) passeHasRepos = true;
+    }
+    // Jours actifs 9-14 (indices 8-13) : heures avec possibilité de 0
+    // Si pas encore de repos dans le passé, forcer un dans les actifs aussi
+    let activeHasRepos = false;
+    for (let i = 8; i < 14; i++) {
+      hours[i] = randH(!passeHasRepos && !activeHasRepos && i > 8);
+      if (hours[i] === 0) activeHasRepos = true;
+    }
+    // Filet : forcer un repos quelque part si aucun dans les 14 jours
+    if (!passeHasRepos && !activeHasRepos) {
+      hours[3 + Math.floor(Math.random() * 4)] = 0;
+    }
+    hours[14] = 0; // jour 15 = case élève
+
+  } else {
+    // ── CYCLE 2 CONFORME ──
+    // getSum() et checkAvant70() comptent TOUS les deux depuis index 1 (jour 2).
+    // Donc hours[1] entre dans le budget de 70h ET dans le budget de 120h.
+    //
+    // Contraintes :
+    //   A) hours[1] + cumAvant + cumApres <= 120h   (total indices 1-13)
+    //   B) hours[1] + cumAvant < 70h               (repos arrive avant 70h cumulees)
+    //   C) Un 0 present dans indices 0-13
+
+    hours[0] = randH(false); // jour 1 : hors cycle, libre
+
+    // Jour 2 (index 1) : on le limite pour garder de la marge avant 70h
+    // On laisse au max 40h a index 1, pour qu'il reste de la place avant le repos
+    const max1 = 40;
+    hours[1] = 4 + Math.floor(Math.random() * (max1 - 3)); // 4 a 40h... mais randH donne 4-14
+    hours[1] = randH(false); // 4-14h (suffisant, on ajuste le budget en consequence)
+
+    // Position du repos : index 3 a 10
+    const iRepos = 3 + Math.floor(Math.random() * 8);
+
+    // Budget avant repos = 69h - hours[1] (pour que h1 + cumAvant < 70)
+    const budgetAvant = 69 - hours[1];
+
+    // Phase 1 : indices 2 a iRepos-1, somme <= budgetAvant
+    let cumAvant = 0;
+    for (let i = 2; i < iRepos; i++) {
+      const slots = iRepos - i;
+      const maxRestant = budgetAvant - cumAvant;
+      // Garantir au moins 4h par slot restant
+      const maxIci = Math.min(14, maxRestant - 4 * (slots - 1));
+      if (maxIci <= 0) { hours[i] = 0; continue; } // budget epuise, on met 0
+      const h = maxIci >= 4 ? 4 + Math.floor(Math.random() * (maxIci - 3)) : maxIci;
+      hours[i] = Math.min(h, 14);
+      cumAvant += hours[i];
+    }
+
+    // Repos garanti
+    hours[iRepos] = 0;
+
+    // Phase 2 : indices iRepos+1 a 13
+    // Budget total = 120h - hours[1] - cumAvant
+    let cumApres = 0;
+    const budgetApres = 120 - hours[1] - cumAvant;
+    for (let i = iRepos + 1; i <= 13; i++) {
+      const slots = 13 - i + 1;
+      const maxRestant = budgetApres - cumApres;
+      const maxIci = Math.min(14, maxRestant - 4 * (slots - 1));
+      const h = maxIci >= 4 ? 4 + Math.floor(Math.random() * (maxIci - 3)) : Math.max(0, maxIci);
+      hours[i] = Math.max(0, Math.min(h, 14));
+      cumApres += hours[i];
+    }
+
+    hours[14] = 0; // jour 15 = case eleve
+  }
+}
+
+/* ── Génération INFRACTION ── */
+function generateInfraction() {
+  if (cycle === 1) {
+    const typeInfraction = Math.random() < 0.5 ? 'depassement70' : 'consecutif';
+    if (typeInfraction === 'depassement70') {
+      // Passé avec au moins un repos
+      let passeHasRepos = false;
+      for (let i = 0; i < 8; i++) {
+        hours[i] = randH(i > 0 && !passeHasRepos);
+        if (hours[i] === 0) passeHasRepos = true;
+      }
+      if (!passeHasRepos) hours[3 + Math.floor(Math.random() * 3)] = 0;
+      // Actifs : forcer total > 70h (11-14h/j)
+      for (let i = 8; i < 14; i++) hours[i] = Math.floor(Math.random() * 4) + 11;
+      hours[14] = 0;
+    } else {
+      // Aucun 0 dans les 14 premiers jours
+      for (let i = 0; i < 14; i++) hours[i] = Math.floor(Math.random() * 11) + 4;
+      hours[14] = 0;
+    }
+
+  } else {
+    const r = Math.random();
+    const typeInfraction = r < 0.34 ? 'depassement120' : r < 0.67 ? 'repos70' : 'consecutif';
+
+    if (typeInfraction === 'depassement120') {
+      hours[0] = randH(false); hours[1] = randH(false);
+      for (let i = 2; i < 14; i++) hours[i] = Math.floor(Math.random() * 3) + 12; // 12-14h
+      hours[6] = 0; // repos au milieu (respecte avant-70h mais dépasse 120h)
+      hours[14] = 0;
+    } else if (typeInfraction === 'repos70') {
+      hours[0] = randH(false); hours[1] = randH(false);
+      let cum = 0, reposTardifPlace = false;
+      for (let i = 2; i < 14; i++) {
+        if (!reposTardifPlace && cum > 75 && Math.random() < 0.5) {
+          hours[i] = 0; reposTardifPlace = true; cum = 0; continue;
+        }
+        const h = randH(false);
+        hours[i] = h; cum += h;
+      }
+      hours[14] = 0;
+    } else {
+      // Aucun 0 dans les 14 premiers jours
+      hours[0] = randH(false); hours[1] = randH(false);
+      for (let i = 2; i < 14; i++) hours[i] = randH(false);
+      hours[14] = 0;
+    }
+  }
+}
+
+function resetFeedbacks() {
+  for (let n = 1; n <= 5; n++) {
+    const fb = document.getElementById('qfb'+n);
+    if (fb) { fb.className = 'q-fb hidden'; fb.textContent = ''; }
+    const inp = document.getElementById('qinp'+n);
+    if (inp) inp.value = '';
+  }
+}
+
+function render() {
+  buildGrid();
+  buildEleve();
+  buildAnalyse();
+  document.getElementById('gridLabel').textContent =
+    cycle === 1 ? 'Grille — Cycle 1 · 70h / 7 jours' : 'Grille — Cycle 2 · 120h / 14 jours';
+}
+
+/* ── Règle 14 jours consécutifs ──
+   Infraction si les 14 jours précédant le jour 15 (indices 0-13)
+   ne contiennent aucun repos (0).                                  */
+function checkConsecutif() {
+  return hours.slice(0, 14).some(h => h === 0);
+}
+
+function buildGrid() {
+  ['head1','vals1','head2','vals2'].forEach(id => document.getElementById(id).innerHTML = '');
+
+  // Rangée 1 : jours 1-8 (indices 0-7)
+  for (let i = 0; i < 8; i++) {
+    mkHead('head1', 'Jour '+(i+1));
+    document.getElementById('vals1').appendChild(mkVal(i));
+  }
+  // Rangée 2 : jours 9-15 (indices 8-14)
+  for (let i = 8; i < 15; i++) {
+    mkHead('head2', 'Jour '+(i+1));
+    document.getElementById('vals2').appendChild(mkVal(i));
+  }
+  document.getElementById('consecLegend').className = 'consec-legend hidden';
+}
+
+function mkHead(pid, txt) {
+  const d = document.createElement('div');
+  d.className = 'day-head';
+  d.textContent = txt;
+  document.getElementById(pid).appendChild(d);
+}
+
+function mkVal(i) {
+  const d = document.createElement('div');
+  const isEleve = (i === 14); // jour 15 = case élève
+  if (isEleve) {
+    d.className = 'day-val empty pop';
+    d.textContent = '?';
+  } else if (hours[i] === 0) {
+    d.className = 'day-val zero pop';
+    d.textContent = '0';
+  } else {
+    d.className = 'day-val pop';
+    d.textContent = hours[i] + 'h';
+  }
+  return d;
+}
+
+/* ── Calculs Loi 430 ──
+   Cycle 1 : 7 jours actifs = jours 9-15 (indices 8-14), j15 = case élève
+             → on somme indices 8-13 (jours 9-14)
+   Cycle 2 : 14 jours actifs = jours 2-15 (indices 1-14), j15 = case élève
+             → on somme indices 1-13 (jours 2-14)                            */
+function getSum() {
+  return cycle === 1
+    ? hours.slice(8, 14).reduce((a,b)=>a+b,0)
+    : hours.slice(1, 14).reduce((a,b)=>a+b,0);
+}
+function getLimit()    { return cycle === 1 ? 70 : 120; }
+function getDispoRaw() { return Math.max(0, getLimit() - getSum()); }
+// Si infraction 14j consécutifs → 0h disponible (interdit de travailler)
+function getDispo()    { return checkConsecutif() ? getDispoRaw() : 0; }
+function getTravail()  { return Math.min(getDispo(), 14); }
+function getConduite() { return Math.min(getDispo(), 13); }
+
+/* Vérifie repos (0) pris avant ou à 70h cumulées (Cycle 2 : indices 1-13) */
+function checkAvant70() {
+  let cum = 0;
+  const actifs = hours.slice(1, 14);
+  for (let i = 0; i < actifs.length; i++) {
+    if (actifs[i] === 0 && cum > 0 && cum <= 70) return true;
+    if (actifs[i] !== 0) {
+      cum += actifs[i];
+      if (cum > 70) return false;
+    }
+  }
+  return true;
+}
+
+/* ── Zone élève ── */
+function buildEleve() {
+  const body = document.getElementById('eleveBody');
+  body.innerHTML = '';
+
+  const note = document.createElement('div');
+  note.className = 'eleve-note';
+  if (cycle === 1) {
+    note.innerHTML = 'Déterminez le nombre d\'heures disponibles à la dernière journée selon le <strong>Cycle 1 — règle 70h / 7 jours</strong>.';
+  } else {
+    note.innerHTML = 'Déterminez le nombre d\'heures disponibles à la dernière journée selon le <strong>Cycle 2 — règle 120h / 14 jours</strong>. N\'oubliez pas la condition du repos de 24h (0) avant ou à 70h cumulées.';
+  }
+  body.appendChild(note);
+
+  if (cycle === 1) {
+    body.appendChild(mkQ('qinp1','qfb1',1,"Combien d'heures reste-t-il disponibles sur le Cycle 1 (règle 70h / 7 jours) ?", 'number', chk1));
+    body.appendChild(mkQ('qinp2','qfb2',2,"Combien d'heures de travail maximum sont disponibles au jour 15 ?", 'number', chk2));
+    body.appendChild(mkQ('qinp3','qfb3',3,"Combien d'heures de conduite maximum sont disponibles au jour 15 ?", 'number', chk3));
+  } else {
+    body.appendChild(mkQ('qinp1','qfb1',1,"Combien d'heures ont été travaillées sur les 13 jours actifs ?", 'number', chk1));
+    body.appendChild(mkQ('qinp2','qfb2',2,"Combien d'heures disponibles reste-t-il selon la règle 120h / 14 jours ?", 'number', chk2));
+    body.appendChild(mkQ('qinp3','qfb3',3,"Combien d'heures de travail maximum sont disponibles au jour 15 ?", 'number', chk3));
+    body.appendChild(mkQ('qinp4','qfb4',4,"Combien d'heures de conduite maximum sont disponibles au jour 15 ?", 'number', chk4));
+    body.appendChild(mkQ('qinp5','qfb5',5,"Le repos de 24h (0) a-t-il été pris avant ou à 70h de travail cumulées ?", 'select', chk5));
+  }
+}
+
+function mkQ(inputId, fbId, num, text, type, handler) {
+  const d = document.createElement('div');
+  d.className = 'q-block';
+  const inp = type === 'number'
+    ? `<input class="q-input" id="${inputId}" type="number" min="0" max="200" placeholder="h">`
+    : `<select class="q-select" id="${inputId}"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select>`;
+  d.innerHTML = `
+    <div class="q-num">Q${num}.</div>
+    <div class="q-text">${text}</div>
+    ${inp}
+    <button class="btn-verif" onclick="(${handler.toString()})()">Vérifier</button>
+    <div class="q-fb hidden" id="${fbId}"></div>`;
+  return d;
+}
+
+function setFb(id, ok, correct) {
+  const el = document.getElementById(id);
+  el.className = 'q-fb ' + (ok ? 'ok' : 'err');
+  el.textContent = ok ? '✓ Correct !' : '✗ Réponse attendue : ' + correct;
+}
+function noVal(id) {
+  const el = document.getElementById(id);
+  el.className = 'q-fb hint';
+  el.textContent = 'Entrez une valeur';
+}
+
+function chk1() {
+  const correct = cycle === 1 ? getDispo() : getSum();
+  const val = parseInt(document.getElementById('qinp1').value);
+  if (isNaN(val)) { noVal('qfb1'); return; }
+  setFb('qfb1', val === correct, correct + 'h');
+}
+function chk2() {
+  const correct = cycle === 1 ? getTravail() : getDispo();
+  const val = parseInt(document.getElementById('qinp2').value);
+  if (isNaN(val)) { noVal('qfb2'); return; }
+  setFb('qfb2', val === correct, correct + 'h');
+}
+function chk3() {
+  const correct = cycle === 1 ? getConduite() : getTravail();
+  const val = parseInt(document.getElementById('qinp3').value);
+  if (isNaN(val)) { noVal('qfb3'); return; }
+  setFb('qfb3', val === correct, correct + 'h');
+}
+function chk4() {
+  const correct = getConduite();
+  const val = parseInt(document.getElementById('qinp4').value);
+  if (isNaN(val)) { noVal('qfb4'); return; }
+  setFb('qfb4', val === correct, correct + 'h');
+}
+function chk5() {
+  const ok = checkAvant70();
+  const correct = ok ? 'oui' : 'non';
+  const val = document.getElementById('qinp5').value;
+  if (!val) { noVal('qfb5'); return; }
+  setFb('qfb5', val === correct, correct);
+}
+
+/* ── Analyse ── */
+function buildAnalyse() {
+  const body = document.getElementById('analyseBody');
+  body.innerHTML = '';
+
+  const sum = getSum();
+  const limit = getLimit();
+  const okConsec = checkConsecutif();
+  const dispoRaw = getDispoRaw();
+  const dispo = getDispo(); // 0 si infraction consécutif
+  const ok = sum <= limit;
+  const pct = Math.min(100, (sum / limit) * 100);
+  const gc = pct > 90 ? 'danger' : pct > 70 ? 'warn' : '';
+
+  const sg = document.createElement('div');
+  sg.className = 'stat-grid';
+  sg.appendChild(mkCard('Heures travaillées', sum+'h', '/'+limit+'h limite', pct, gc, ok?'':'s-danger'));
+  sg.appendChild(mkCard('Heures disponibles', dispoRaw+'h', okConsec ? 'restantes' : '→ 0h (infraction)', 0, '', okConsec?'':'s-danger'));
+  sg.appendChild(mkCard('Max H. travail', getTravail()+'h', 'au jour 15', 0, '', !okConsec?'s-danger':''));
+  sg.appendChild(mkCard('Max H. conduite', getConduite()+'h', 'au jour 15', 0, '', !okConsec?'s-danger':''));
+  body.appendChild(sg);
+
+  addRow(body,
+    `<strong>Règle ${limit}h / ${cycle===1?'7':'14'} jours :</strong> ${sum}h travaillées sur les ${cycle===1?'6':'13'} jours actifs du cycle.`,
+    ok, ok ? 'Conforme' : 'Dépassement de '+(sum-limit)+'h', false);
+
+  if (cycle === 2) {
+    const okR = checkAvant70();
+    addRow(body,
+      `<strong>Repos 24h avant ou à 70h :</strong> Un "0" doit apparaître avant d'atteindre 70h cumulées dans les jours actifs.`,
+      okR, okR ? 'Condition respectée' : 'Non respecté — repos manquant avant 70h', false);
+  }
+
+  addRow(body,
+    `<strong>Règle 14 jours consécutifs :</strong> Un conducteur ne peut pas travailler plus de 14 jours consécutifs sans prendre un repos de 24h (0). `+
+    (okConsec
+      ? 'Au moins un repos est présent dans les 14 jours précédant le jour 15.'
+      : 'Aucun repos trouvé dans les 14 jours précédant le jour 15 — le jour 15 est <strong>interdit de travail</strong>. Heures disponibles : 0h.'),
+    okConsec, okConsec ? 'Conforme' : 'INFRACTION — Jour 15 interdit', false);
+
+  addRow(body,
+    `<strong>Heures disponibles au jour 15 :</strong> ${dispo}h — travail max <strong>${getTravail()}h/j</strong>, conduite max <strong>${getConduite()}h/j</strong>.`,
+    true, '', true);
+}
+
+function mkCard(lbl, val, sub, pct, gc, cls) {
+  const d = document.createElement('div');
+  d.className = 'stat-card ' + (cls || '');
+  const vc = gc === 'danger' ? 'danger' : '';
+  let html = `<div class="stat-lbl">${lbl}</div><div class="stat-val ${vc}">${val}</div><div class="stat-sub">${sub}</div>`;
+  if (pct > 0) html += `<div class="gauge-track"><div class="gauge-fill ${gc}" style="width:${pct}%"></div></div>`;
+  d.innerHTML = html;
+  return d;
+}
+
+function addRow(parent, text, ok, pill, isInfo) {
+  const d = document.createElement('div');
+  d.className = 'conform-row ' + (isInfo ? 'info-row' : ok ? 'ok-row' : 'err-row');
+  const pc = isInfo ? 'pill-info' : ok ? 'pill-ok' : 'pill-err';
+  const ph = pill ? `<span class="pill ${pc}">${pill}</span>` : '';
+  d.innerHTML = `<div class="conform-text">${text}</div>${ph}`;
+  parent.appendChild(d);
+}
+
+/* ── Toggles ── */
+function togglePanel(bodyId, iconId) {
+  const body = document.getElementById(bodyId);
+  const icon = document.getElementById(iconId);
+  const hidden = body.classList.toggle('hidden');
+  icon.textContent = hidden ? '▼ AFFICHER' : '▲ MASQUER';
+}
+function toggleAnalyse() {
+  togglePanel('analyseBody', 'analyseIcon');
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
